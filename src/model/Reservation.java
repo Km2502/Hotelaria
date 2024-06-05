@@ -4,33 +4,29 @@
  */
 package model;
 
-/**
- *
- * @author Lucas
- */
 import java.util.Date;
 
 public class Reservation {
-    private String reservationId;
+    private String id;
     private Customer customer;
-    private Date date;
-    private int roomNumber;
-    private Employee createdBy;
+    private Date reservationDate;
+    private Room room;
+    private Employee employee;
 
-    public Reservation(String reservationId, Customer customer, Date date, int roomNumber, Employee createdBy) {
-        this.reservationId = reservationId;
+    public Reservation(String id, Customer customer, Date reservationDate, Room room, Employee employee) {
+        this.id = id;
         this.customer = customer;
-        this.date = date;
-        this.roomNumber = roomNumber;
-        this.createdBy = createdBy;
+        this.reservationDate = reservationDate;
+        this.room = room;
+        this.employee = employee;
     }
 
-    public String getReservationId() {
-        return reservationId;
+    public String getId() {
+        return id;
     }
 
-    public void setReservationId(String reservationId) {
-        this.reservationId = reservationId;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public Customer getCustomer() {
@@ -41,29 +37,30 @@ public class Reservation {
         this.customer = customer;
     }
 
-    public Date getDate() {
-        return date;
+    public Date getReservationDate() {
+        return reservationDate;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
+    public void setReservationDate(Date reservationDate) {
+        this.reservationDate = reservationDate;
     }
 
-    public int getRoomNumber() {
-        return roomNumber;
+    public Room getRoom() {
+        return room;
     }
 
-    public void setRoomNumber(int roomNumber) {
-        this.roomNumber = roomNumber;
+    public void setRoom(Room room) {
+        this.room = room;
     }
 
-    public Employee getCreatedBy() {
-        return createdBy;
+    public Employee getEmployee() {
+        return employee;
     }
 
-    public void setCreatedBy(Employee createdBy) {
-        this.createdBy = createdBy;
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
     }
 }
+
 
 

@@ -7,36 +7,44 @@ package tests;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
-import java.util.Date;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import model.Customer;
 import model.Employee;
 import model.Reservation;
+import model.Room;
 
 public class ReservationTest {
-    
+
     private Reservation reservation;
     private Customer customer;
+    private Room room;
     private Employee employee;
 
     @Before
-    public void setUp() {
-        // Inicializa os objetos com valores de exemplo
-        customer = new Customer("1", "Lucas Lopes", "lucas@example.com");
-        employee = new Employee("E1", "Joao Pedro", "joao@example.com");
-        reservation = new Reservation("101", customer, new Date(), 101, employee);
+    public void setUp() throws ParseException {
+        customer = new Customer("C1", "Lucas Lopes", "lucas@example.com", "123456789");
+        room = new Room(101, true);
+        employee = new Employee("E1", "João Silva", "joao@example.com");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date reservationDate = sdf.parse("2023-05-23");
+
+        reservation = new Reservation("R1", customer, reservationDate, room, employee);
     }
 
     @Test
-    public void testGetReservationId() {
-        assertEquals("101", reservation.getReservationId());
+    public void testGetId() {
+        assertEquals("R1", reservation.getId());
     }
 
     @Test
-    public void testSetReservationId() {
-        reservation.setReservationId("102");
-        assertEquals("102", reservation.getReservationId());
+    public void testSetId() {
+        reservation.setId("R2");
+        assertEquals("R2", reservation.getId());
     }
 
     @Test
@@ -46,35 +54,57 @@ public class ReservationTest {
 
     @Test
     public void testSetCustomer() {
-        Customer newCustomer = new Customer("2", "Keven Macedo", "keven@example.com");
+        Customer newCustomer = new Customer("C2", "Pedro Silva", "pedro@example.com", "987654321");
         reservation.setCustomer(newCustomer);
         assertEquals(newCustomer, reservation.getCustomer());
     }
 
     @Test
-    public void testGetDate() {
-        assertNotNull(reservation.getDate());
+    public void testGetReservationDate() throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date expectedDate = sdf.parse("2023-05-23");
+        assertEquals(expectedDate, reservation.getReservationDate());
     }
 
     @Test
-    public void testSetDate() {
-        Date newDate = new Date();
-        reservation.setDate(newDate);
-        assertEquals(newDate, reservation.getDate());
+    public void testSetReservationDate() throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date newDate = sdf.parse("2023-06-01");
+        reservation.setReservationDate(newDate);
+        assertEquals(newDate, reservation.getReservationDate());
     }
 
     @Test
-    public void testGetCreatedBy() {
-        assertEquals(employee, reservation.getCreatedBy());
+    public void testGetRoom() {
+        assertEquals(room, reservation.getRoom());
     }
 
     @Test
-    public void testSetCreatedBy() {
-        Employee newEmployee = new Employee("E2", "Pedro Castelhano", "pedro@example.com");
-        reservation.setCreatedBy(newEmployee);
-        assertEquals(newEmployee, reservation.getCreatedBy());
+    public void testSetRoom() {
+        Room newRoom = new Room(102, true);
+        reservation.setRoom(newRoom);
+        assertEquals(newRoom, reservation.getRoom());
+    }
+
+    @Test
+    public void testGetEmployee() {
+        assertEquals(employee, reservation.getEmployee());
+    }
+
+    @Test
+    public void testSetEmployee() {
+        Employee newEmployee = new Employee("E2", "Maria Santos", "maria@example.com");
+        reservation.setEmployee(newEmployee);
+        assertEquals(newEmployee, reservation.getEmployee());
     }
 }
+
+
+
+
+
+
+
 
 
 

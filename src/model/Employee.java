@@ -4,10 +4,6 @@
  */
 package model;
 
-/**
- *
- * @author Lucas
- */
 public class Employee {
     private String id;
     private String name;
@@ -42,5 +38,12 @@ public class Employee {
     public void setEmail(String email) {
         this.email = email;
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }
+
+
 

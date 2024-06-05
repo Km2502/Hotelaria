@@ -8,7 +8,6 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-
 import model.Employee;
 
 public class EmployeeTest {
@@ -53,4 +52,5 @@ public class EmployeeTest {
         assertEquals("joao@example.com", employee.getEmail());
     }
 }
+
 

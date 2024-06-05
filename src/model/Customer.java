@@ -8,12 +8,16 @@ public class Customer {
     private String id;
     private String name;
     private String email;
+    private String phone;
 
-    public Customer(String id, String name, String email) {
+    public Customer(String id, String name, String email, String phone) {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.phone = phone;
     }
+
+    // Getters e Setters
 
     public String getId() {
         return id;
@@ -39,10 +43,22 @@ public class Customer {
         this.email = email;
     }
 
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
     @Override
     public String toString() {
         return name + " (" + email + ")";
     }
 }
+
+
+
+
 
 

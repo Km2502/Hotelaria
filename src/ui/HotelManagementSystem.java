@@ -4,14 +4,20 @@
  */
 package ui;
 
+import com.toedter.calendar.JCalendar;
 import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 import model.Customer;
 import model.Room;
+import model.Employee;
+import org.jdatepicker.impl.JDatePanelImpl;
+import org.jdatepicker.impl.JDatePickerImpl;
+import org.jdatepicker.impl.SqlDateModel;
+import org.jdatepicker.impl.DateComponentFormatter;
 
 public class HotelManagementSystem extends JFrame {
 
@@ -32,12 +38,18 @@ public class HotelManagementSystem extends JFrame {
         JMenuItem addCustomer = new JMenuItem("Adicionar Cliente");
         addCustomer.addActionListener(e -> showCustomerForm());
         customerMenu.add(addCustomer);
+        JMenuItem deleteCustomer = new JMenuItem("Excluir Cliente");
+        deleteCustomer.addActionListener(e -> showDeleteCustomerForm());
+        customerMenu.add(deleteCustomer);
         menuBar.add(customerMenu);
 
         JMenu reservationMenu = new JMenu("Reservas");
         JMenuItem newReservation = new JMenuItem("Nova Reserva");
         newReservation.addActionListener(e -> showReservationForm());
         reservationMenu.add(newReservation);
+        JMenuItem cancelReservation = new JMenuItem("Cancelar Reserva");
+        cancelReservation.addActionListener(e -> showCancelReservationForm());
+        reservationMenu.add(cancelReservation);
         menuBar.add(reservationMenu);
 
         JMenu roomMenu = new JMenu("Quartos");
@@ -52,138 +64,259 @@ public class HotelManagementSystem extends JFrame {
 
     private void showCustomerForm() {
         JFrame customerFrame = new JFrame("Adicionar Cliente");
-        customerFrame.setSize(300, 150);
-        customerFrame.setLayout(new GridLayout(3, 2));
-        customerFrame.add(new JLabel("Nome:"));
+        customerFrame.setSize(300, 200);
+        customerFrame.setLayout(new GridLayout(4, 2));
+
+        JLabel nameLabel = new JLabel("Nome:");
         JTextField nameField = new JTextField();
-        customerFrame.add(nameField);
-        customerFrame.add(new JLabel("Email:"));
+        JLabel emailLabel = new JLabel("Email:");
         JTextField emailField = new JTextField();
-        customerFrame.add(emailField);
+        JLabel phoneLabel = new JLabel("Telefone:");
+        JTextField phoneField = new JTextField();
+
         JButton saveButton = new JButton("Salvar");
-        saveButton.addActionListener(e -> saveCustomer(nameField.getText(), emailField.getText()));
+        saveButton.addActionListener(e -> {
+            String name = nameField.getText();
+            String email = emailField.getText();
+            String phone = phoneField.getText();
+
+            try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO customers (name, email, phone) VALUES (?, ?, ?)")) {
+                pstmt.setString(1, name);
+                pstmt.setString(2, email);
+                pstmt.setString(3, phone);
+                pstmt.executeUpdate();
+                JOptionPane.showMessageDialog(customerFrame, "Cliente adicionado com sucesso!");
+                customerFrame.dispose();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(customerFrame, "Erro ao adicionar cliente: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        customerFrame.add(nameLabel);
+        customerFrame.add(nameField);
+        customerFrame.add(emailLabel);
+        customerFrame.add(emailField);
+        customerFrame.add(phoneLabel);
+        customerFrame.add(phoneField);
+        customerFrame.add(new JLabel());
         customerFrame.add(saveButton);
+
         customerFrame.setVisible(true);
     }
 
-    private void saveCustomer(String name, String email) {
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
-             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO Customers (name, email) VALUES (?, ?)")) {
-            pstmt.setString(1, name);
-            pstmt.setString(2, email);
-            pstmt.executeUpdate();
-            JOptionPane.showMessageDialog(null, "Cliente adicionado com sucesso!");
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Erro ao adicionar cliente: " + ex.getMessage());
-        }
+    private void showDeleteCustomerForm() {
+        JFrame deleteCustomerFrame = new JFrame("Excluir Cliente");
+        deleteCustomerFrame.setSize(300, 150);
+        deleteCustomerFrame.setLayout(new GridLayout(2, 2));
+
+        JLabel customerLabel = new JLabel("Cliente:");
+        JComboBox<Customer> customerComboBox = new JComboBox<>();
+        loadCustomers(customerComboBox);
+
+        JButton deleteButton = new JButton("Excluir");
+        deleteButton.addActionListener(e -> {
+            Customer selectedCustomer = (Customer) customerComboBox.getSelectedItem();
+            if (selectedCustomer != null) {
+                try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11")) {
+                    // Excluir todas as reservas associadas ao cliente
+                    try (PreparedStatement pstmtReservations = conn.prepareStatement("DELETE FROM reservations WHERE customer_id = ?")) {
+                        pstmtReservations.setString(1, selectedCustomer.getId());
+                        pstmtReservations.executeUpdate();
+                    }
+
+                    // Excluir o cliente
+                    try (PreparedStatement pstmtCustomer = conn.prepareStatement("DELETE FROM customers WHERE id = ?")) {
+                        pstmtCustomer.setString(1, selectedCustomer.getId());
+                        pstmtCustomer.executeUpdate();
+                        JOptionPane.showMessageDialog(deleteCustomerFrame, "Cliente excluído com sucesso!");
+                        deleteCustomerFrame.dispose();
+                    }
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(deleteCustomerFrame, "Erro ao excluir cliente: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        deleteCustomerFrame.add(customerLabel);
+        deleteCustomerFrame.add(customerComboBox);
+        deleteCustomerFrame.add(new JLabel());
+        deleteCustomerFrame.add(deleteButton);
+
+        deleteCustomerFrame.setVisible(true);
     }
 
     private void showReservationForm() {
         JFrame reservationFrame = new JFrame("Nova Reserva");
-        reservationFrame.setSize(350, 300);
-        reservationFrame.setLayout(new GridLayout(6, 2));
-        reservationFrame.add(new JLabel("Cliente:"));
-        JComboBox<Customer> customerBox = new JComboBox<>();
-        loadCustomers(customerBox);
-        reservationFrame.add(customerBox);
-        reservationFrame.add(new JLabel("Quarto:"));
-        JComboBox<Room> roomBox = new JComboBox<>();
-        loadRooms(roomBox);
-        reservationFrame.add(roomBox);
-        reservationFrame.add(new JLabel("Data (dd/MM/yyyy):"));
-        JTextField dateField = new JTextField();
-        reservationFrame.add(dateField);
-        JButton saveButton = new JButton("Salvar Reserva");
+        reservationFrame.setSize(400, 300);
+        reservationFrame.setLayout(new GridLayout(5, 2));
+
+        JLabel customerLabel = new JLabel("Cliente:");
+        JComboBox<Customer> customerComboBox = new JComboBox<>();
+        loadCustomers(customerComboBox);
+
+        JLabel dateLabel = new JLabel("Data:");
+        SqlDateModel model = new SqlDateModel();
+        Properties p = new Properties();
+        p.put("text.today", "Today");
+        p.put("text.month", "Month");
+        p.put("text.year", "Year");
+        JDatePanelImpl datePanel = new JDatePanelImpl(model, p);
+        JDatePickerImpl datePicker = new JDatePickerImpl(datePanel, new DateComponentFormatter());
+
+        JLabel roomLabel = new JLabel("Quarto:");
+        JComboBox<Room> roomComboBox = new JComboBox<>();
+        loadRooms(roomComboBox);
+
+        JLabel employeeLabel = new JLabel("Funcionário:");
+        JComboBox<Employee> employeeComboBox = new JComboBox<>();
+        loadEmployees(employeeComboBox);
+
+        JButton saveButton = new JButton("Salvar");
         saveButton.addActionListener(e -> {
-            try {
-                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-                Date date = formatter.parse(dateField.getText()); // Parse the date from the field
-                saveReservation(
-                    ((Customer) customerBox.getSelectedItem()).getId(),
-                    ((Room) roomBox.getSelectedItem()).getRoomNumber(),
-                    new SimpleDateFormat("yyyy-MM-dd").format(date) // Convert to SQL date format
-                );
-            } catch (ParseException ex) {
-                JOptionPane.showMessageDialog(reservationFrame, "Formato de data inválido. Use 'dd/MM/yyyy'", "Erro", JOptionPane.ERROR_MESSAGE);
+            Customer selectedCustomer = (Customer) customerComboBox.getSelectedItem();
+            java.util.Date selectedDate = (java.util.Date) datePicker.getModel().getValue();
+            Room selectedRoom = (Room) roomComboBox.getSelectedItem();
+            Employee selectedEmployee = (Employee) employeeComboBox.getSelectedItem();
+
+            if (selectedCustomer == null || selectedDate == null || selectedRoom == null || selectedEmployee == null) {
+                JOptionPane.showMessageDialog(reservationFrame, "Todos os campos são obrigatórios!", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (selectedDate.before(new java.util.Date())) {
+                JOptionPane.showMessageDialog(reservationFrame, "Não é possível fazer uma reserva para uma data no passado!", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
+                 PreparedStatement checkStmt = conn.prepareStatement("SELECT COUNT(*) FROM reservations WHERE reservation_date = ? AND room_number = ?");
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO reservations (customer_id, reservation_date, room_number, employee_id) VALUES (?, ?, ?, ?)")) {
+
+                checkStmt.setDate(1, new java.sql.Date(selectedDate.getTime()));
+                checkStmt.setInt(2, selectedRoom.getRoomNumber());
+                ResultSet rs = checkStmt.executeQuery();
+                rs.next();
+
+                if (rs.getInt(1) > 0) {
+                    JOptionPane.showMessageDialog(reservationFrame, "O quarto já está reservado para essa data!", "Erro", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                pstmt.setString(1, selectedCustomer.getId());
+                pstmt.setDate(2, new java.sql.Date(selectedDate.getTime()));
+                pstmt.setInt(3, selectedRoom.getRoomNumber());
+                pstmt.setString(4, selectedEmployee.getId());
+                pstmt.executeUpdate();
+                JOptionPane.showMessageDialog(reservationFrame, "Reserva adicionada com sucesso!");
+                reservationFrame.dispose();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(reservationFrame, "Erro ao adicionar reserva: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
+
+        reservationFrame.add(customerLabel);
+        reservationFrame.add(customerComboBox);
+        reservationFrame.add(dateLabel);
+        reservationFrame.add(datePicker);
+        reservationFrame.add(roomLabel);
+        reservationFrame.add(roomComboBox);
+        reservationFrame.add(employeeLabel);
+        reservationFrame.add(employeeComboBox);
+        reservationFrame.add(new JLabel());
         reservationFrame.add(saveButton);
+
         reservationFrame.setVisible(true);
     }
 
-    private void saveReservation(String customerId, int roomNumber, String dateStr) {
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
-             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO Reservations (customer_id, room_number, reservation_date) VALUES (?, ?, ?)")) {
-            pstmt.setString(1, customerId);
-            pstmt.setInt(2, roomNumber);
-            pstmt.setDate(3, java.sql.Date.valueOf(dateStr)); // Convert string to SQL date directly
-            pstmt.executeUpdate();
-            JOptionPane.showMessageDialog(null, "Reserva salva com sucesso!");
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Erro ao salvar reserva: " + ex.getMessage());
-        }
+    private void showCancelReservationForm() {
+        JFrame cancelReservationFrame = new JFrame("Cancelar Reserva");
+        cancelReservationFrame.setSize(300, 150);
+        cancelReservationFrame.setLayout(new GridLayout(2, 2));
+
+        JLabel reservationLabel = new JLabel("Reserva:");
+        JComboBox<String> reservationComboBox = new JComboBox<>();
+        loadReservations(reservationComboBox);
+
+        JButton cancelButton = new JButton("Cancelar");
+        cancelButton.addActionListener(e -> {
+            String selectedReservation = (String) reservationComboBox.getSelectedItem();
+            if (selectedReservation != null) {
+                String reservationId = selectedReservation.split(" - ")[0]; // Extrair o ID da reserva
+                try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
+                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM reservations WHERE id = ?")) {
+                    pstmt.setString(1, reservationId);
+                    pstmt.executeUpdate();
+                    JOptionPane.showMessageDialog(cancelReservationFrame, "Reserva cancelada com sucesso!");
+                    cancelReservationFrame.dispose();
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(cancelReservationFrame, "Erro ao cancelar reserva: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        cancelReservationFrame.add(reservationLabel);
+        cancelReservationFrame.add(reservationComboBox);
+        cancelReservationFrame.add(new JLabel());
+        cancelReservationFrame.add(cancelButton);
+
+        cancelReservationFrame.setVisible(true);
     }
 
     private void showAvailabilityForm() {
-        JDialog availabilityDialog = new JDialog(this, "Verificar Disponibilidade", true);
-        availabilityDialog.setLayout(new BorderLayout());
-        JPanel datePanel = new JPanel();
-        datePanel.add(new JLabel("Selecione a Data (dd/MM/yyyy):"));
-        JTextField dateField = new JTextField(10);
-        datePanel.add(dateField);
-        JButton checkButton = new JButton("Verificar");
-        checkButton.addActionListener(e -> {
-            String dateString = dateField.getText();
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-            try {
-                Date date = formatter.parse(dateString);
-                checkRoomAvailability(date);
-            } catch (ParseException ex) {
-                JOptionPane.showMessageDialog(this, "Formato de data inválido. Use 'dd/MM/yyyy'", "Erro", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        datePanel.add(checkButton);
-        availabilityDialog.add(datePanel, BorderLayout.CENTER);
-        availabilityDialog.pack();
-        availabilityDialog.setLocationRelativeTo(this);
-        availabilityDialog.setVisible(true);
+        JFrame availabilityFrame = new JFrame("Verificar Disponibilidade");
+        availabilityFrame.setSize(400, 300);
+        availabilityFrame.setLayout(new BorderLayout());
+
+        JCalendar calendar = new JCalendar();
+        calendar.addPropertyChangeListener("calendar", evt -> updateAvailability(calendar));
+
+        availabilityFrame.add(calendar, BorderLayout.CENTER);
+        availabilityFrame.setVisible(true);
     }
 
-    private void checkRoomAvailability(Date date) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String formattedDate = dateFormat.format(date);
+    private void updateAvailability(JCalendar calendar) {
+        Date selectedDate = calendar.getDate();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String formattedDate = sdf.format(selectedDate);
 
-        String query = "SELECT room_number FROM Rooms WHERE room_number NOT IN (" +
-                       "SELECT room_number FROM Reservations WHERE reservation_date = ?) AND is_available = TRUE";
+        if (selectedDate.before(new java.util.Date())) {
+            JOptionPane.showMessageDialog(null, "Data no passado, quartos indisponíveis.");
+            return;
+        }
+
+        StringBuilder availableRooms = new StringBuilder("Quartos disponíveis em " + formattedDate + ":\n");
 
         try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-        pstmt.setString(1, formattedDate);
-        ResultSet rs = pstmt.executeQuery();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT room_number FROM rooms WHERE room_number NOT IN (" +
+                             "SELECT room_number FROM reservations WHERE reservation_date = ?)")) {
+            pstmt.setString(1, formattedDate);
+            ResultSet rs = pstmt.executeQuery();
 
-        StringBuilder availableRooms = new StringBuilder("Quartos disponíveis para a data: ");
-        boolean hasRooms = false;
-        while (rs.next()) {
-            hasRooms = true;
-            availableRooms.append(rs.getInt("room_number")).append(", ");
-        }
-        if (!hasRooms) {
-            availableRooms.append("Nenhum quarto disponível.");
-        } else {
-            availableRooms.setLength(availableRooms.length() - 2); // Remove the last comma and space
-        }
-        JOptionPane.showMessageDialog(this, availableRooms.toString());
+            boolean hasRooms = false;
+            while (rs.next()) {
+                availableRooms.append("Quarto ").append(rs.getInt("room_number")).append(", ");
+                hasRooms = true;
+            }
+
+            if (!hasRooms) {
+                availableRooms.append("Nenhum quarto disponível.");
+            } else {
+                availableRooms.setLength(availableRooms.length() - 2); // Remove the last comma and space
+            }
+            JOptionPane.showMessageDialog(null, availableRooms.toString());
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao verificar disponibilidade: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Erro ao verificar disponibilidade: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void loadCustomers(JComboBox<Customer> comboBox) {
         try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
-             PreparedStatement pstmt = conn.prepareStatement("SELECT id, name, email FROM Customers")) {
+             PreparedStatement pstmt = conn.prepareStatement("SELECT id, name, email, phone FROM customers")) {
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                comboBox.addItem(new Customer(rs.getString("id"), rs.getString("name"), rs.getString("email")));
+                comboBox.addItem(new Customer(rs.getString("id"), rs.getString("name"), rs.getString("email"), rs.getString("phone")));
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Erro ao carregar clientes: " + ex.getMessage());
@@ -192,7 +325,7 @@ public class HotelManagementSystem extends JFrame {
 
     private void loadRooms(JComboBox<Room> comboBox) {
         try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
-             PreparedStatement pstmt = conn.prepareStatement("SELECT room_number, is_available FROM Rooms WHERE is_available = TRUE")) {
+             PreparedStatement pstmt = conn.prepareStatement("SELECT room_number, is_available FROM rooms")) {
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 comboBox.addItem(new Room(rs.getInt("room_number"), rs.getBoolean("is_available")));
@@ -202,12 +335,68 @@ public class HotelManagementSystem extends JFrame {
         }
     }
 
+    private void loadEmployees(JComboBox<Employee> comboBox) {
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
+             PreparedStatement pstmt = conn.prepareStatement("SELECT id, name, email FROM employees")) {
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                comboBox.addItem(new Employee(rs.getString("id"), rs.getString("name"), rs.getString("email")));
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao carregar funcionários: " + ex.getMessage());
+        }
+    }
+
+    private void loadReservations(JComboBox<String> comboBox) {
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel_management", "root", "magnoliacasa11");
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT r.id, c.name, r.reservation_date, r.room_number " +
+                     "FROM reservations r JOIN customers c ON r.customer_id = c.id")) {
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                comboBox.addItem(rs.getString("id") + " - " + rs.getString("name") + " - " + rs.getDate("reservation_date") + " - Quarto " + rs.getInt("room_number"));
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao carregar reservas: " + ex.getMessage());
+        }
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new HotelManagementSystem().setVisible(true);
         });
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
