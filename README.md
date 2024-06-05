@@ -10,9 +10,6 @@ Escopo do Software:
  
 O software inclui cadastro de clientes, gerenciamento de reservas, calendário de disponibilidade, histórico de visitas, cadastro de funcionários e geração de relatórios. Não inclui interface de usuário para clientes, integração com sistemas de pagamento, gestão de inventário, suporte a múltiplos hotéis, funcionalidades de marketing ou gestão de manutenção de quarto.
  
-Público-Alvo da Documentação:
- 
-A documentação é destinada a desenvolvedores, administradores do sistema, funcionários do hotel, gerentes do hotel e equipes de suporte técnico, fornecendo informações relevantes para cada grupo sobre a instalação, configuração, operação e manutenção do sistema.
  
 1.2 Contexto
  
@@ -23,6 +20,33 @@ O projeto iniciou em janeiro de 2024, motivado pela necessidade de modernizar e 
 Descrição Geral do Sistema:
  
 O sistema é uma aplicação integrada que facilita a gestão de reservas, cadastro de clientes, verificação de disponibilidade de quartos e geração de relatórios. Composto por interface de usuário, serviço de backend, banco de dados, serviços de relatórios e segurança de autenticação, proporciona uma operação eficiente e organizada.
+ 
+```
++----------------------------------------------------+
+|                 Interface de Usuário               |
+|         	(JavaFX - Desktop App)             	|
++--------------+----------------------+--------------+
+           	|                  	|
+           	|                  	|
+           	|                  	|
++--------------v----------------------+--------------+
+|                Servidor de Aplicação               |
+|               (Apache Tomcat - Java EE)            |
++--------------+----------------------+--------------+
+           	|                  	|
+           	|                  	|
+           	|                  	|
++--------------v----------------------+--------------+
+|                Serviço de Banco de Dados          |
+|                      (MySQL)                   	|
++--------------+----------------------+--------------+
+           	|                  	|
+           	|                  	|
+           	|                  	|
++--------------v----------------------+--------------+
+|                 Serviço de Relatórios             |
+|         	(JasperReports - Java Library)     	|
++----------------------------------------------------+
 
 *Funcionalidades Principais*
 Reserva de Vaga: Permite que o funcionário reserve uma vaga para um cliente.
@@ -31,4 +55,4 @@ Verificação de Cadastro: Permite que o funcionário verifique se um cliente j�
 Verificação de Dias Disponíveis: Permite que o funcionário verifique a disponibilidade de dias para reservas.
 
 [link]([https://docs.google.com/document/d/14gBUQEsH1-2WH7DokGh6Ce3KEdU1UV8op1REa26CXs8/edit](https://docs.google.com/document/d/1NFwMmRpKUBo7zU1bOQlZrHj-1S44G153lcb-1nAw8m8/edit?usp=sharing))
-ARQUITETURA
+DOCUMENTAÇÃO DA ENGENHARIA E ARQUITETURA DO SOFTWARE
