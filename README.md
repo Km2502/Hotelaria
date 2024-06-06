@@ -54,7 +54,7 @@ Cadastro de Cliente: Permite que o funcionário cadastre novos clientes no siste
 Verificação de Cadastro: Permite que o funcionário verifique se um cliente já está cadastrado.
 Verificação de Dias Disponíveis: Permite que o funcionário verifique a disponibilidade de dias para reservas.
 
-[link]([https://docs.google.com/document/d/14gBUQEsH1-2WH7DokGh6Ce3KEdU1UV8op1REa26CXs8/edit](https://docs.google.com/document/d/1NFwMmRpKUBo7zU1bOQlZrHj-1S44G153lcb-1nAw8m8/edit?usp=sharing))
+[link]([(https://docs.google.com/document/d/1NFwMmRpKUBo7zU1bOQlZrHj-1S44G153lcb-1nAw8m8/edit?usp=sharing)])
 DOCUMENTAÇÃO DA ENGENHARIA E ARQUITETURA DO SOFTWARE
 
 https://trello.com/b/J2VoN2Dv/hotelaria-prime-booking
